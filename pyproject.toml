@@ -1,0 +1,21 @@
+[project]
+name = "spear-of-a-log"
+version = "0.1.0"
+description = "A tool to download videos and their transcripts from Kick and YouTube"
+readme = "README.md"
+authors = [
+    { name = "Derek Scott", email = "598517+johnny13@users.noreply.github.com" }
+]
+requires-python = ">=3.14"
+dependencies = [
+    "textual>=0.40.0",
+    "youtube-transcript-api>=1.2.4",
+    "yt-dlp>=2026.8.19",
+]
+
+[project.scripts]
+spear-of-a-log = "spear_of_a_log:main"
+
+[build-system]
+requires = ["uv_build>=0.12.9,<0.13.0"]
+build-backend = "uv_build"

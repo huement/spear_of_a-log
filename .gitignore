@@ -1,0 +1,24 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+venv
+
+*.mp4
+*.webm
+yt_clip_*.txt
+*_cache.json
+
+node_modules/*
+node_modules
+
+ADOBE_EXTENSION
+
+.DS_Store
+**/.DS_Store

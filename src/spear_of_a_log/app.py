@@ -257,8 +257,9 @@ class ALogMachineApp(App):
 
         node_path = shutil.which("node")
         ytdlp_path = shutil.which("yt-dlp")
-        script_path = os.path.abspath("get_m3u8.js") if os.path.exists(
-            "get_m3u8.js") else None
+        script_file = Path(__file__).parent / "get_m3u8.js"
+        script_path = str(
+            script_file.resolve()) if script_file.exists() else None
 
         errors = False
 
@@ -515,6 +516,7 @@ class ALogMachineApp(App):
                 if not line:
                     continue
 
+                # 1. Handle native yt-dlp progress lines
                 if line.startswith("download:"):
                     parts = line.replace("download:", "").split("|")
                     if len(parts) >= 4:
@@ -523,7 +525,6 @@ class ALogMachineApp(App):
                         ]
                         clean_pct = pct_str.replace("%", "").strip()
 
-                        # Only update the progress bar if we have a valid numeric float
                         if clean_pct not in ("NA", "N/A", "Unknown", ""):
                             try:
                                 pbar.progress = float(clean_pct)
@@ -531,14 +532,57 @@ class ALogMachineApp(App):
                                 pass
 
                         lbl_status.update(
-                            f"Progress: [bold green]{pct_str}[/bold green] of ~{size}"
+                            f"Step: [bold green]Downloading Stream[/bold green] ({pct_str} of ~{size})"
                         )
                         lbl_eta.update(
                             f"Speed: [bold green]{speed}[/bold green] | ETA: [bold yellow]{eta}[/bold yellow]"
                         )
-                    pass
+
+                # 2. Handle ffmpeg conversion & clipping progress lines
+                elif "time=" in line and "fps=" in line:
+                    time_match = re.search(
+                        r"time=\s*(-?\d+):(\d+):(\d+(?:\.\d+)?)", line)
+                    size_match = re.search(r"size=\s*(\S+)", line)
+                    speed_match = re.search(r"speed=\s*(\S+)", line)
+
+                    if time_match:
+                        h, m, s = map(float, time_match.groups())
+                        curr_sec = max(0.0, h * 3600 + m * 60 + s)
+
+                        if not is_full_video and clip_duration > 0:
+                            pct = min(100.0,
+                                      (curr_sec / clip_duration) * 100.0)
+                            pbar.progress = pct
+                            lbl_status.update(
+                                f"Step: [bold green]Clipping Video with FFmpeg[/bold green] ({pct:.1f}%)"
+                            )
+                        else:
+                            lbl_status.update(
+                                f"Step: [bold green]Processing Video[/bold green] ({int(curr_sec)}s processed)"
+                            )
+
+                    size_str = size_match.group(1) if size_match else "--"
+                    speed_str = speed_match.group(1) if speed_match else "--"
+                    lbl_eta.update(
+                        f"Speed: [bold green]{speed_str}[/bold green] | Size: [bold yellow]{size_str}[/bold yellow]"
+                    )
+                    log.write(f"[dim]{line}[/dim]")
+
+                # 3. Detect major pipeline stages & forward logs
                 else:
-                    # Display recoding, merging, and yt-dlp status messages in log
+                    if line.startswith("[VideoConvertor]"):
+                        lbl_status.update(
+                            "[bold yellow]Step: Recoding Video Format...[/bold yellow]"
+                        )
+                    elif line.startswith("[Merger]"):
+                        lbl_status.update(
+                            "[bold yellow]Step: Merging Audio & Video Tracks...[/bold yellow]"
+                        )
+                    elif line.startswith("[ExtractAudio]"):
+                        lbl_status.update(
+                            "[bold yellow]Step: Extracting Audio...[/bold yellow]"
+                        )
+
                     log.write(f"[dim]{line}[/dim]")
 
         await self.download_process.wait()

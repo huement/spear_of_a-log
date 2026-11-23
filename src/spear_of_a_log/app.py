@@ -369,6 +369,11 @@ class ALogMachineApp(App):
                 cmd.extend(
                     ["-f", f"bv*[height<={res_val}]+ba/b[height<={res_val}]"])
 
+            audio_only = self.query_one("#yt-audio-only-chk", Checkbox).value
+            if audio_only:
+                audio_format = self.query_one("#yt-audio-fmt", Select).value
+                cmd.extend(["-x", "--audio-format", str(audio_format)])
+
             sh = self.query_one("#yt-start-h", Input).value.strip()
             sm = self.query_one("#yt-start-m", Input).value.strip()
             ss = self.query_one("#yt-start-s", Input).value.strip()

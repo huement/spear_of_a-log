@@ -123,6 +123,18 @@ def compose_youtube_tab(last_yt_url: str = "") -> TabPane:
             Checkbox("No Video", value=False, id="yt-transcript-novideo", classes="col-widget"),
             classes="row-3col",
         ),
+        Horizontal(
+            Label("Audio Only:", classes="col-label"),
+            Checkbox(value=False, id="yt-audio-only-chk", classes="col-widget"),
+            Select(
+                options=[("MP3", "mp3"), ("WAV", "wav"), ("M4A", "m4a")],
+                value="mp3",
+                id="yt-audio-fmt",
+                classes="col-widget",
+                allow_blank=False,
+            ),
+            classes="row-3col",
+        ),
         Label("Start Time (HH : MM : SS) - [Leave blank for FULL video]:", classes="field-label"),
         Horizontal(
             Input(value="", placeholder="HH", id="yt-start-h", classes="time-input", max_length=2),
